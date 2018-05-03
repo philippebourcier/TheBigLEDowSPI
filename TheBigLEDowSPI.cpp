@@ -142,7 +142,7 @@ int tcpConnect(string address, int port)
     else   
         cerr << "Socket created"  << endl;
 
-	
+/*	
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) 
 	{
 		cerr << "Could not set SO_REUSEADDR" << endl;					 
@@ -156,7 +156,7 @@ int tcpConnect(string address, int port)
 		return -1;
 	}
 #endif
-
+*/
 
     if(inet_addr(address.c_str()) == -1)
     {
@@ -255,18 +255,18 @@ bool isNewFrame( char *header, int lgH, char *buffer, int lgB )
 // MAIN -----------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-	char		_id[20];	  	
+	char		_id[22];
 	string 		_host		= "127.0.0.1";
 	int 		_port		= 1234;
 	string 		_spiDevice	= "id_0"; 								// for test "id_1234_0"; 
 		
 	char		_header[]	= { 65, 80, 65, 49, 48, 50, 95 };	// "APA102_"
-	int			_headerSize	= sizeof(_header) / sizeof(char);
+	int		_headerSize	= sizeof(_header) / sizeof(char);
 	
-	char 		_freqBuf[10];	
+	char 		_freqBuf[10];
 
 	// Parameters -----------------------------------------
-	int			_maxSize	= 20000;
+	int		_maxSize	= 20000;
 	int 		_delay 		= 1;
 	bool		_endFrame	= false;
 	
@@ -279,9 +279,9 @@ int main(int argc, char *argv[])
 	} 
 	else if ( argc == 4 )
 	{		
-		_host 		= string( 	argv[1] );
-		_port 		= atoi(		argv[2] );
-		_spiDevice 	= string( 	argv[3] );	// /dev/spidev0.0 /dev/spidev1.0
+		_host 		= string(argv[1]);
+		_port 		= atoi(argv[2]);
+		_spiDevice 	= string(argv[3]);	// /dev/spidev0.0 /dev/spidev1.0
 		sprintf(_id, "_id_%s_%c", getSerialNumber(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
 //		sprintf(_id, "_id_%s_%c", getMacAddress(),	_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
     } 
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 	
 	while(1)
     {
-		int sockFd		= tcpConnect( _host, _port );
+		int sockFd	= tcpConnect( _host, _port );
 		int dataSize 	= 0;
 		
 		if( sockFd >= 0 )
