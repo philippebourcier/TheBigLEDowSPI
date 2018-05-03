@@ -11,8 +11,8 @@
 #include <sys/ioctl.h>
 #include <linux/if.h>
 
-#include <fcntl.h>				//Needed for SPI port
-#include <linux/spi/sp_idev.h>	//Needed for SPI port
+#include <fcntl.h>		//Needed for SPI port
+#include <linux/spi/spidev.h>	//Needed for SPI port
 
 using namespace std;
 
