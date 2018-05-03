@@ -142,7 +142,6 @@ int tcpConnect(string address, int port)
     else   
         cerr << "Socket created"  << endl;
 
-/*	
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) 
 	{
 		cerr << "Could not set SO_REUSEADDR" << endl;					 
@@ -156,7 +155,6 @@ int tcpConnect(string address, int port)
 		return -1;
 	}
 #endif
-*/
 
     if(inet_addr(address.c_str()) == -1)
     {
