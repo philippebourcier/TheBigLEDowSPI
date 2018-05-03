@@ -255,7 +255,7 @@ bool isNewFrame( char *header, int lgH, char *buffer, int lgB )
 // MAIN -----------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-	char		_id[22];
+	char		_id[21];
 	string 		_host		= "127.0.0.1";
 	int 		_port		= 1234;
 	string 		_spiDevice	= "id_0"; 								// for test "id_1234_0"; 
@@ -282,8 +282,8 @@ int main(int argc, char *argv[])
 		_host 		= string(argv[1]);
 		_port 		= atoi(argv[2]);
 		_spiDevice 	= string(argv[3]);	// /dev/spidev0.0 /dev/spidev1.0
-		sprintf(_id, "_id_%s_%c", getSerialNumber(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
-//		sprintf(_id, "_id_%s_%c", getMacAddress(),	_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
+		sprintf(_id, "id_%s_%c", getSerialNumber(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
+//		sprintf(_id, "id_%s_%c", getMacAddress(),	_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
     } 
 	else 
 	{
