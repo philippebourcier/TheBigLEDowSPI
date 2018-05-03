@@ -273,8 +273,8 @@ int main(int argc, char *argv[])
 	// Arguments ------------------------------------------
     if ( argc == 1 )
     {	
-		cerr << "_id : " << getSerialNumber() 	<< "_0" << endl;
-//		cerr << "_id : " << getMacAddress() 	<< "_0" << endl;
+		cerr << "_id : id_" << getSerialNumber() << "_0" << endl;
+//		cerr << "_id : id_" << getMacAddress() 	 << "_0" << endl;
 		exit(0);
 	} 
 	else if ( argc == 4 )
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 		_port 		= atoi(argv[2]);
 		_spiDevice 	= string(argv[3]);	// /dev/spidev0.0 /dev/spidev1.0
 		sprintf(_id, "id_%s_%c", getSerialNumber(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
-//		sprintf(_id, "id_%s_%c", getMacAddress(),	_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
+//		sprintf(_id, "id_%s_%c", getMacAddress(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
     } 
 	else 
 	{
