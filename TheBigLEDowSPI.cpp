@@ -211,7 +211,7 @@ void send2spi( int fd, uint32_t freq, char *data, int size, bool endFrame )
 {
 	int 		i	= 0;
 	uint32_t  	lgB = (uint32_t) (size * 4 / 3) + 4;
-	lgB += (endFrame) ? ((uint32_t)(size/16) + 4) : 0;
+	lgB += (endFrame) ? ((uint32_t)(size/6) + 4) : 0;
 	
 	uint8_t buffer[lgB];
 	
