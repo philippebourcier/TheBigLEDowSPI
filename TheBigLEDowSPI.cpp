@@ -211,18 +211,18 @@ void send2spi( int fd, uint32_t freq, char *data, int size, bool endFrame )
 {
 	int 		i	= 0;
 	uint32_t  	lgB = (uint32_t) (size * 4 / 3) + 4;
-	lgB += (endFrame) ? ((uint32_t)(size/6) + 4) : 0;
+	lgB += (endFrame) ? ((uint32_t)(size/16) + 4) : 0;
 	
 	uint8_t buffer[lgB];
 	
 	for(; i<4; i++) 
 	{
-		buffer[i] 	= (uint8_t) 255;
+		buffer[i] 	= (uint8_t) 0;
 	}
 
 	for(int j=0; j<size; i+=4, j+=3) 
 	{
-		buffer[i] 	= (uint8_t) 255;
+		buffer[i]   = (uint8_t) 255;
 		buffer[i+1] = (uint8_t) data[j];
 		buffer[i+2] = (uint8_t) data[j+1];
 		buffer[i+3] = (uint8_t) data[j+2];
@@ -234,7 +234,7 @@ void send2spi( int fd, uint32_t freq, char *data, int size, bool endFrame )
 	}
 	
 	spiWrite( fd, freq, buffer, lgB );
-	cerr << "<send2spi> data size = " << size << ", spi size = " << lgB << endl; 
+//	cerr << "<send2spi> data size = " << size << ", spi size = " << lgB << endl; 
 //printFrame( buffer, lgB );
 }
 
@@ -265,14 +265,14 @@ int main(int argc, char *argv[])
 
 	// Parameters -----------------------------------------
 	int		_maxSize	= 20000;
-	int 		_delay 		= 1;
-	bool		_endFrame	= false;
+	int 		_delay 		= 60;
+	bool		_endFrame	= true;
 	
 	// Arguments ------------------------------------------
     if ( argc == 1 )
     {	
-		cerr << "_id : id_" << getSerialNumber() << "_0" << endl;
-//		cerr << "_id : id_" << getMacAddress() 	 << "_0" << endl;
+		cout << "_id : id_" << getSerialNumber() << "_0" << endl;
+//		cout << "_id : id_" << getMacAddress() 	 << "_0" << endl;
 		exit(0);
 	} 
 	else if ( argc == 4 )
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 	int bufferSize;
 	
 	while(1)
-    {
+    	{
 		int sockFd	= tcpConnect( _host, _port );
 		int dataSize 	= 0;
 		
