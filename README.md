@@ -1,12 +1,20 @@
 # TheBigLEDowSPI
-TheBigLEDowSPI - Simple APA102/SK9822 SPI LED control for SBC (ie: RasPi, Asus Tinker, etc)
 
-Included in this repo, the binary, so you can directly use this program on your favorite RasPi 3+...
+TheBigLEDowSPI - Simple APA102/SK9822 SPI LED controller for SBC (ie: RasPi, Asus Tinker, etc)
+Included in this repo, the static binary (for DietPi), so you can directly use this program on your favorite RasPi 3+...
 
 To use this program, simply type :
-./TheBigLEDowSPI IP-of-master-server TCP-Port spidev-device Speed-in-Mhz Number-of-LEDs
+pypy ./led-server.py Number-of-LEDs (up to 5000 per output if you want to keep a FPS of 30 min.)
+./TheBigLEDowSPI IP-of-master-server TCP-Port spidev-device
 
-ie: ./TheBigLEDowSPI 192.168.2.1 4200 /dev/spidev0.0 10 3000
+ie: ./TheBigLEDowSPI 127.0.0.1 4200 /dev/spidev0.0
+
+The server (Python script) is the code which calculates the frames to be sent to the LEDs.
+It will also calculate the ideal speed in KHz based on the number of LEDs you asked for.
+
+A RasPi has 2 SPI outputs, so you can handle 10000 LEDs at 30 FPS with one client running on each output (spidev0.0 and spidev1.0).
+
+Interesting details regarding maximum speed...
 
 In order to calculate the max speed for a given number of LEDs, use this :
 MaxFreq = -2.95 * NbLEDs + 19200
