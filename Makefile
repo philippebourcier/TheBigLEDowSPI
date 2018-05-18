@@ -1,2 +1,2 @@
 all:
-	        g++ -O3 -o TheBigLEDowSPI TheBigLEDowSPI.cpp
+	        g++ -Wall -O3 -static -o TheBigLEDowSPI TheBigLEDowSPI.cpp
