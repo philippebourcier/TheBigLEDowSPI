@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
     // Arguments ------------------------------------------
     if ( argc == 1 )
     {
-        cout << "_id : id_" << getSerialNumber() << "_0" << endl;
+        cout << "id : id_" << getSerialNumber() << "_0" << endl;
 //		cout << "_id : id_" << getMacAddress() 	 << "_0" << endl;
         exit(0);
     }
