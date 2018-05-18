@@ -1,9 +1,8 @@
 #!/usr/bin/pypy
 
-# DO NOT USE Python to run this script... use pypy !
-
 #------------------------------------------------------------------------------
-# Sample LED Server V2.1
+# DO NOT USE Python to run this script... use pypy !
+# Your CPU will thank you.
 #------------------------------------------------------------------------------
 
 import	time
