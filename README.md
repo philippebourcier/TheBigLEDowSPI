@@ -4,7 +4,12 @@ TheBigLEDowSPI - Simple APA102/SK9822 SPI LED controller for SBC (ie: RasPi, Asu
 Included in this repo, the static binary (for DietPi), so you can directly use this program on your favorite RasPi 3+...
 
 To use this program, simply type :
-pypy ./led-server.py Number-of-LEDs (up to 5000 per output if you want to keep a FPS of 30 min.)
+pypy ./led-server.py
+
+led-server.py is a sample program configured for 3000 LEDs per default.
+It can run up to 5000 LEDs per output (2 outputs on the RasPi3) if you want to keep the FPS of above 20.
+
+Then launch the client :
 ./TheBigLEDowSPI IP-of-master-server TCP-Port spidev-device
 
 ie: ./TheBigLEDowSPI 127.0.0.1 4200 /dev/spidev0.0
