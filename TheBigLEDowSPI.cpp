@@ -122,9 +122,16 @@ int spiWrite( int fd, uint32_t speed, uint8_t *data, int size )
 	tr.tx_buf 			= (unsigned long)(data);
 	tr.len 				= (unsigned long)(size);
 	tr.speed_hz 		= speed;
-	tr.bits_per_word 	= 8;						
-				
-	return ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	tr.bits_per_word 	= 8;
+	
+        try
+        {
+                ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+        }
+        catch (const std::exception& e)
+        {
+                std::cerr << "<spiWrite>, Error : " << e.what() << endl;
+        }
 }
 
 // TCP Utilities --------------------------------------------------------------
