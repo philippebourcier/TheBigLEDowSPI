@@ -11,12 +11,17 @@
 #include <sys/ioctl.h>
 #include <linux/if.h>
 
-#include <fcntl.h>		//Needed for SPI port
-#include <linux/spi/spidev.h>	//Needed for SPI port
+#include <fcntl.h>		// Needed for SPI port
+#include <linux/spi/spidev.h>	// Needed for SPI port
 
 using namespace std;
 
-// _id Utilities ---------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// tcp2apa102spi.cpp V2.2
+//-----------------------------------------------------------------------------
+#define VERSION "V2.2"
+
+// ID Utilities ---------------------------------------------------------------
 const char* getSerialNumber()
 {
     static char str[16 + 1];
@@ -46,8 +51,8 @@ const char* getSerialNumber()
 const char* getMacAddress()
 {
     static char str[18];
-    struct 		ifreq s;
-    int 		fs = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    struct 	ifreq s;
+    int 	fs = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
 
     strcpy(s.ifr_name, "eth0");
 
@@ -75,67 +80,61 @@ int spiOpen( string device, uint32_t speed )
     //SPI_MODE_2 (1,0) 	CPOL = 1, CPHA = 0, Clock _idle high, data is clocked in on falling edge, output data (change) on rising edge
     //SPI_MODE_3 (1,1) 	CPOL = 1, CPHA = 1, Clock _idle high, data is clocked in on rising, edge output data (change) on falling edge
     uint8_t mode 		= SPI_MODE_0;
-    uint8_t	bitsPerWord = 8;
-    int 	fd 			= open(device.c_str(), O_RDWR);
+    uint8_t	bitsPerWord	= 8;
+    int 	fd 		= open(device.c_str(), O_RDWR);
 
     if (fd < 0)
     {
-        perror("Error - Could not open SPI device");
+        perror("<spiOpen> ERROR : Could not open SPI device.");
         exit(1);
     }
 
     status = ioctl(fd, SPI_IOC_WR_MODE, &mode);
     if(status < 0)
     {
-        perror("Could not set SPIMode (WR)...ioctl fail");
+        perror("<spiOpen> ERROR : Could not set SPIMode (WR)...ioctl fail");
         exit(1);
     }
 
     status = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bitsPerWord);
     if(status < 0)
     {
-        perror("Could not set SPI bitsPerWord (WR)...ioctl fail");
+        perror("<spiOpen> ERROR : Could not set SPI bitsPerWord (WR)...ioctl fail");
         exit(1);
     }
 
     status = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
     if(status < 0)
     {
-        perror("Could not set SPI speed (WR)...ioctl fail");
+        perror("<spiOpen> ERROR : Could not set SPI speed (WR)...ioctl fail");
         exit(1);
     }
 
     return( fd );
 }
 
-int spiClose( int fd )
-{
-    return( close(fd) );
-}
-
 int spiWrite( int fd, uint32_t speed, uint8_t *data, int size )
 {
-    int status;
     struct spi_ioc_transfer tr;
 
     memset(&tr, 0, sizeof tr);
 
     tr.tx_buf 			= (unsigned long) data;
-    // tr.rx_buf                   = (unsigned long) NULL;
+    //tr.rx_buf 			= (unsigned long) NULL;
     tr.len 			= (unsigned long) size;
-    // tr.speed_hz 		= speed;
-    // tr.bits_per_word 	= 8;
+    tr.speed_hz 		= speed;
+    tr.bits_per_word		= 8;
 
     try
     {
-        status = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+        ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
     }
     catch (const std::exception& e)
     {
-        std::cerr << "<spiWrite>, Error : " << e.what() << endl;
+        cerr << "<spiWrite> ERROR : " << e.what() << endl;
     }
 
-    return status;
+    return 0;
 }
 
 // TCP Utilities --------------------------------------------------------------
@@ -147,11 +146,11 @@ int tcpConnect(string address, int port)
 
     if (sock == -1)
     {
-        cerr << "Could not create socket" << endl;
+        cerr << "tcpConnect> ERROR : Could not create socket" << endl;
         return -1;
     }
     else
-        cerr << "Socket created"  << endl;
+        cerr << "tcpConnect> Socket created"  << endl;
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
     {
@@ -174,7 +173,7 @@ int tcpConnect(string address, int port)
 
         if((he = gethostbyname(address.c_str())) == NULL)
         {
-            cerr << "Gethostbyname : Failed to resolve hostname" << endl;
+            cerr << "tcpConnect> ERROR Gethostbyname : Failed to resolve hostname" << endl;
             return -1;
         }
 
@@ -184,7 +183,7 @@ int tcpConnect(string address, int port)
         {
             server.sin_addr = *addr_list[i];
 
-            cerr << address << " resolved to " << inet_ntoa(*addr_list[i]) << endl;
+            cerr << address << "tcpConnect> resolved to " << inet_ntoa(*addr_list[i]) << endl;
 
             break;
         }
@@ -199,29 +198,19 @@ int tcpConnect(string address, int port)
 
     if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
-        cerr << "connect failed" << endl;
+        cerr << "tcpConnect> ERROR : connect failed." << endl;
         return -1;
     }
 
-    cerr << "Connected" << endl;
+    cerr << "tcpConnect> OK: Connected." << endl;
     return sock;
 }
 
-// Utilities ------------------------------------------------------------------
-void printFrame( uint8_t *data, int size )
-{
-    for(int i=0; i<size; i++)
-    {
-        fprintf( stderr, "%02X,", data[i] );
-    }
-
-    fprintf( stderr, "\n" );
-}
-
+// CLIENT ---------------------------------------------------------------------
 void send2spi( int fd, uint32_t freq, char *data, int size, bool endFrame )
 {
-    uint32_t i		= 0;
-    uint32_t lgB	= (uint32_t) (size * 4 / 3) + 4;
+    uint32_t 	i	= 0;
+    uint32_t  	lgB = (uint32_t) (size * 4 / 3) + 4;
     lgB += (endFrame) ? ((uint32_t)(size/6) + 4) : 0;
 
     uint8_t buffer[lgB];
@@ -233,7 +222,7 @@ void send2spi( int fd, uint32_t freq, char *data, int size, bool endFrame )
 
     for(int j=0; j<size; i+=4, j+=3)
     {
-        buffer[i]   = (uint8_t) 255;
+        buffer[i] 	= (uint8_t) 255;
         buffer[i+1] = (uint8_t) data[j];
         buffer[i+2] = (uint8_t) data[j+1];
         buffer[i+3] = (uint8_t) data[j+2];
@@ -241,14 +230,12 @@ void send2spi( int fd, uint32_t freq, char *data, int size, bool endFrame )
 
     for(; i<lgB; i++)
     {
-        buffer[i] = (uint8_t) 0;
+        buffer[i] 	= (uint8_t) 0; // 255;
     }
 
-    spiWrite( fd, freq, buffer, lgB );
+    //cerr << "<send2spi> data size = " << size << ", spi size = " << lgB << endl;
 
-    //	cerr << "<send2spi> data size = " << size << ", spi size = " << lgB << endl;
-    //printFrame( buffer, lgB );
-
+    spiWrite( fd, freq, buffer, lgB );		// COMMENT TO TEST
 }
 
 bool isNewFrame( char *header, int lgH, char *buffer, int lgB )
@@ -263,38 +250,153 @@ bool isNewFrame( char *header, int lgH, char *buffer, int lgB )
     return true;
 }
 
+void tcpClient( int sockFd, int spiFd, uint32_t  spiFreq, uint32_t maxSize, char *header, int headerSize, bool endFrame )
+{
+    unsigned int	bufferSize 		= 0;
+    unsigned int	dataSize 		= maxSize-headerSize;
+    unsigned int 	size2receive	 	= maxSize;
+    int 	dataLength 		= 0;
+
+    char	buffer[maxSize];
+    char 	data[maxSize];
+
+    while(1)
+    {
+        try
+        {
+            bufferSize = recv( sockFd, buffer, size2receive, 0 );
+
+            if(bufferSize <= 0)
+            {
+                cerr << "<tcpClient> ERROR : receive failed." << endl;
+                break;
+            }
+            else
+            {
+                if( isNewFrame(header, headerSize, buffer, bufferSize) )
+                {
+                    if(bufferSize == maxSize)
+                    {
+                        if(dataLength != 0)
+                        {
+                            // cerr << "<tcpClient> ERROR (buffer == max) : previous frame of " << dataLength << endl;
+                        }
+                        else
+                        {
+                            memcpy( data, &buffer[headerSize], dataSize );	// copy buffer -> data minus header
+                            send2spi( spiFd, spiFreq, data, dataSize, endFrame );
+                            // cerr << "<tcpClient> OK : header frame received in one piece : " << dataSize << " bytes." << endl;
+                        }
+
+                        size2receive 	= maxSize;
+                        dataLength	= 0;
+                    }
+                    else
+                    {
+                        if(bufferSize < maxSize)
+                        {
+                            size2receive = maxSize - bufferSize;
+                            dataLength	 = bufferSize - headerSize;
+                            memcpy( data, &buffer[headerSize], dataLength ); // copy buffer -> data minus header
+                            // cerr << "<tcpClient> partial header frame received : " << bufferSize << "waiting for " << size2receive << " bytes." << endl;
+                        }
+                        else
+                        {
+                            size2receive = maxSize;
+                            dataLength	 = 0;
+                            memset( data, 0, dataSize );			// cleanup data
+                            // cerr << "<tcpClient> ERROR : header frame too long : " << bufferSize << endl;
+                        }
+                    }
+                }
+                else
+                {
+                    size2receive 	-= bufferSize;
+
+                    if(size2receive == 0)
+                    {
+                        if((dataLength + bufferSize) != dataSize)
+                        {
+                            // cerr << "<tcpClient> ERROR (size2 == 0) : frame of " << (dataLength + bufferSize) << endl;
+                        }
+                        else
+                        {
+                            memcpy( &data[dataLength], buffer, bufferSize ); // add buffer to data
+                            send2spi( spiFd, spiFreq, data, dataSize, endFrame );
+                            // cerr << "<tcpClient> OK : frame completed from several parts, total : " << dataSize << " bytes." << endl;
+                        }
+
+                        size2receive 	= maxSize;
+                        dataLength	= 0;
+                    }
+                    else
+                    {
+                        if(size2receive > 0)
+                        {
+                            if(dataLength == 0)
+                            {
+                                memset( data, 0, dataSize );		// cleanup data
+                                size2receive 	= maxSize;
+                                dataLength	= 0;
+                                // cerr << "<tcpClient> ERROR : partial frame without Header : " << bufferSize << " bytes." << endl;
+                            }
+                            else
+                            {
+                                memcpy( &data[dataLength], buffer, bufferSize );	// add buffer to data
+                                dataLength		+= bufferSize;
+                                // cerr << "<tcpClient> frame part : " << bufferSize << " bytes received, waiting : " << size2receive << " bytes." << endl;
+                            }
+                        }
+                        else
+                        {
+                            memset( data, 0, dataSize );			// cleanup data
+                            size2receive 	= maxSize;
+                            dataLength		= 0;
+                            // cerr << "<tcpClient> ERROR : frame part too long : " << bufferSize << " bytes." << endl;
+                        }
+                    }
+                }
+            }
+        }
+        catch (const std::exception& e)
+        {
+            cerr << "<tcpClient> ERROR : " << e.what() << endl;
+            break;
+        }
+    }
+}
+
 // MAIN -----------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
     char		_id[21];
     string 		_host		= "127.0.0.1";
-    int 		_port		= 1234;
-    string 		_spiDevice	= "id_0"; 								// for test "id_1234_0";
+    int 		_port		= 4200;
+    string 		_spiDevice	= "";
 
     char		_header[]	= { 65, 80, 65, 49, 48, 50, 95 };	// "APA102_"
     int		_headerSize	= sizeof(_header) / sizeof(char);
 
-    char 		_freqBuf[10];
+    char 		_initBuf[80];
 
     // Parameters -----------------------------------------
-    int		_maxSize	= 20000;
-    int 	_delay 		= 60;
-    bool	_endFrame	= true;
+    int 		_delay 		= 6;
+    bool		_endFrame	= false;
 
     // Arguments ------------------------------------------
     if ( argc == 1 )
     {
-        cout << "id : id_" << getSerialNumber() << "_0" << endl;
-//		cout << "_id : id_" << getMacAddress() 	 << "_0" << endl;
+        cout << "id : id_" << getSerialNumber() 	<< "_0" << endl;
+//		cerr << "id : id_" << getMacAddress() 	<< "_0" << endl;
         exit(0);
     }
     else if ( argc == 4 )
     {
-        _host 		= string(argv[1]);
-        _port 		= atoi(argv[2]);
-        _spiDevice 	= string(argv[3]);	// /dev/spidev0.0 /dev/spidev1.0
-        sprintf(_id, "id_%s_%c", getSerialNumber(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
-//		sprintf(_id, "id_%s_%c", getMacAddress(),_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
+        _host 		= string( 	argv[1] );
+        _port 		= atoi(		argv[2] );
+        _spiDevice 	= string( 	argv[3] );	// /dev/spidev0.0 /dev/spidev1.0
+        sprintf(_id, "id_%s_%c", getSerialNumber(),	_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
+//		sprintf(_id, "id_%s_%c", getMacAddress(),	_spiDevice.at(_spiDevice.find_first_of(".") - 1) );
     }
     else
     {
@@ -302,64 +404,47 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    cerr << "Client id : " << _id << ", on : " << _spiDevice << ", waiting for " << _host << ":" << _port << endl;
+    cerr << "TCP to APA1O2 Client " << VERSION << ", id : " << _id << ", on : " << _spiDevice << ", waiting for " << _host << ":" << _port << endl;
 
     // Main loop ------------------------------------------
-    int bufferSize;
-
     while(1)
     {
         int sockFd	= tcpConnect( _host, _port );
-        int dataSize 	= 0;
 
         if( sockFd >= 0 )
         {
             if( send(sockFd, _id, strlen(_id), 0) >= 0 )
             {
-                if( recv(sockFd, _freqBuf, sizeof(_freqBuf), 0) >= 0 )
+                if( recv(sockFd, _initBuf, sizeof(_initBuf), 0) >= 0 )
                 {
-                    uint32_t	spiFreq	= atoi(_freqBuf) * 1000;
-                    int 		spiFd = spiOpen( _spiDevice, spiFreq );
-                    char 		buffer[_maxSize];
-                    char 		data[_maxSize];
+                    uint32_t	spiFreq 	= 0;
+                    uint32_t	receiveSize	= 0;
+                    int		spiFd		= 0;
 
-                    cerr << "<main> connected at " << spiFreq << " Hz" << endl;
+                    sscanf(_initBuf, "%d,%d", &spiFreq, &receiveSize);
+                    spiFreq		*= 1000;
 
-                    while(1)
+                    if(spiFreq != 0 || receiveSize != 0)
                     {
-                        bufferSize = recv( sockFd, buffer, sizeof(buffer), 0 );
-
-                        if(bufferSize <= 0)
-                        {
-                            cerr << "Receive failed" << endl;
-                            break;
-                        }
-                        else
-                        {
-                            if( isNewFrame(_header, _headerSize, buffer, bufferSize) )
-                            {
-                                if(dataSize != 0)
-                                    send2spi( spiFd, spiFreq, data, dataSize, _endFrame );
-
-                                dataSize = bufferSize - _headerSize;
-
-                                memset( data, 0, sizeof(data) );
-                                memcpy( data, &buffer[_headerSize], dataSize );
-                            }
-                            else
-                            {
-                                memcpy( &data[dataSize], buffer, bufferSize );
-                                dataSize += bufferSize;
-                            }
-                        }
+                        spiFd = spiOpen( _spiDevice, spiFreq );
+                        tcpClient( sockFd, spiFd, spiFreq, receiveSize, _header, _headerSize, _endFrame );
+                    }
+                    else
+                    {
+                        std::cerr << "<Main> Initialization failed." << endl;
                     }
 
-                    spiClose( spiFd );
+                    close( spiFd );
+                    close( sockFd );
+                    sleep( _delay );
                 }
             }
         }
+        else
+        {
+            cerr << "<Main> TCP Connect failed." << endl;
+        }
 
-        close( sockFd );
         sleep( _delay );
     }
 
