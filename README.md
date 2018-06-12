@@ -38,5 +38,5 @@ https://github.com/philippebourcier/DietPi-scripts
 
 ******
 
-If you want to get an idea of what can be done with this code, you can [check our corporate website](http://www.whilezero.fr/) [//]: # {:target="_blank"}.
+If you want to get an idea of what can be done with this code, you can [check our corporate website](http://www.whilezero.fr/) <!-- {:target="_blank"} -->.
 
