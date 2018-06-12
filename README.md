@@ -19,10 +19,9 @@ It will not calculate the ideal speed in KHz based on the number of LEDs you ask
 In order to calculate the max KHz for a given number of LEDs, use this formula :
 MaxFreq = -2.95 * NbLEDs + 19200
 
-So, for 3000 LEDs, the max speed is -2.95 * 3000 + 19200 = 10350 KHz (so let's use 10000).
-What will be the max FPS with that speed ?
-Speed in Hz / NbLEDs / 32 (bits) = 
-10,000,000 / 3000 / 32 = 104 FPS
+So, for 3000 LEDs, the max speed is -2.95 * 3000 + 19200 = 10350 KHz (so let's use 10000).  
+What will be the max FPS with that speed ?  
+Speed in Hz / NbLEDs / 32 (bits) = 10,000,000 / 3000 / 32 = 104 FPS
 
 ******
 
@@ -36,4 +35,8 @@ There are 3 binary releases in this repo (statically built on DietPi) :
 Finally, in order to configure your RasPi for sending data on the SPI bus, you should check this repo :
 https://github.com/philippebourcier/DietPi-scripts
 ... which contains setup_spi_pi.sh, where you can find all information needed to configure the SPI ports on a RasPi3 running DietPi.
+
+******
+
+If you want to get an idea of what can be done with this code, you can <a href="http://www.whilezero.fr/" target="_blank">check our corporate website</a>.
 
