@@ -1,7 +1,11 @@
 #!/usr/bin/pypy
-
+#------------------------------------------------------------------------------
+# Sample LED SERVER
+# led-server.py - V2.3
+#
 # DO NOT USE Python to run this script... use pypy !
 # Your CPU will thank you.
+#------------------------------------------------------------------------------
 
 import	time
 import 	random
@@ -17,7 +21,7 @@ def setPattern( id, brightness ):
 	
 	for i in xrange(len(ptrn)):
 		if ptrn[i] != 0:
-			ptrn[i] = int( round(ptrn[i] * brightness) )
+			ptrn[i] = int( round(ptrn[i] * brightness / 100.0) )
 	
 	return ptrn
 
@@ -60,11 +64,12 @@ class TcpClient( threading.Thread ):
     def run(self):
 		params		= self.params
 		start 		= 0
-		self.cnx.send( str(params["kHz"]) + "," + str(self.size) )
+		
+		self.cnx.send( str(params["kHz"]) + "," + str(self.size) + "," + str(self.params["brightness"]) )
 
 		try:
 			while True:
-				data = createApa102( start, params["header"], params["pattern"], params["nbLeds"] )
+				data	= createApa102( start, params["header"], params["pattern"], params["nbLeds"] )
 				
 				start 	+= params["move"] 
 				if start >= params["lg"]:
@@ -76,7 +81,6 @@ class TcpClient( threading.Thread ):
 				#print "packet(" + str(len(data)) + ")=[" + binascii.hexlify(data) + "] in " + str(params["delay"])				
 				#print "packet(" + str(len(data)) + ") in " + str(params["delay"])
 				time.sleep( params["delay"] )
-
 				'''
 				# Random network delays 
 				delay = 0.05 + (random.random() * 0.2)
@@ -95,18 +99,18 @@ if __name__ == '__main__':
 					"red"	: [255,0,0],
 					"green"	: [0,255,0],
 					"blue"	: [0,0,255],
-                                        "france": [0,0,255, 0,0,255, 255,255,255, 255,255,255, 255,0,0, 255,0,0],
-					"om"	: [10,109,170, 10,109,170, 255,255,255, 255,255,255],
+					"france": [0,0,255,  255,255,255,  255,0,0],
 					"orange": [255,128,0],
+					"black":  [0,0,0],
 					"purple": [0,128,255]
 				}
 			
 	# Parameters ----------------------
-	nbLeds 		= 3000
-	kHz		= 2400
+	nbLeds 		= 2000
+	kHz		= 4000
 	patternID	= "france"
-	brightness 	= 1			#  0 <-> 1
-	move		= 2			# -m < 0 > m, led movement per frame refresh	
+	brightness 	= 50		#  0% <-> 100%
+	move		= 2		# -m < 0 > m, led movement per frame refresh	
 	IPport		= 4200		
 	fps		= 30		# nb frames per second
 	
@@ -114,7 +118,8 @@ if __name__ == '__main__':
 	_params		= {
 					"header" 	: [65, 80, 65, 49, 48, 50, 95],
 					"nbLeds"	: nbLeds,
-					"kHz"		: kHz,					
+					"kHz"		: kHz,		
+					"brightness": brightness,
 					"pattern"	: setPattern(patternID, brightness),
 					"move"		: (move * 3),
 					"delay"		: (1.0 / fps)
@@ -123,9 +128,9 @@ if __name__ == '__main__':
 
 	_sock 		= socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 	_sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-	_sock.bind( (socket.gethostname(), IPport) )
-	print 'starting up on ' + socket.gethostname()  + ' port ' + str(IPport)
+	_sock.bind( ('', IPport) )
 	_sock.listen( 5 )
+	print 'starting up on ' + socket.gethostname()  + ' port ' + str(IPport)
 
 	# Main loop -----------------------
 	while True:
@@ -133,7 +138,9 @@ if __name__ == '__main__':
 		connection, client_address = _sock.accept()		
 		print 'connection from %s:%s' % client_address 
 		id 		= connection.recv( 30 )
-		print 'client id = <' + str(id) + '> at ' + str(kHz) + ' kHz\n' 
+		print 'client id = <' + str(id) + \
+		'> at ' + str(kHz) + \
+		' kHz, brightness = ' + str(_params["brightness"]) + ' %'
 		
 		client 	= TcpClient( connection, _params )
 		client.start()
