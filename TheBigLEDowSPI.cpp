@@ -410,17 +410,17 @@ int main(int argc, char *argv[])
 	cout << "id : id_" << getMacAddress(_ifname) << "_0" << endl;
         exit(0);
     }
-    else if ( argc >= 4 )
+    else if ( argc >= 3 )
     {
-        _host 			 = string( argv[1] );
-        _port 			 = atoi(   argv[2] );
-        _spiDevice 		 = string( argv[3] );	// /dev/spidev0.0 /dev/spidev1.0
-    	if ( argc == 5 ) _ifname = string( argv[4] );
+        _host 			 	= string( argv[1] );
+        _port 			 	= atoi(   argv[2] );
+        if ( argc == 4 ) _spiDevice 	= string( argv[3] );	// /dev/spidev0.0 /dev/spidev1.0
+    	if ( argc == 5 ) _ifname 	= string( argv[4] );
 	strcpy(_id,string( "id_" + getMacAddress() + "_" + _spiDevice.substr(_spiDevice.find_first_of(".")-1,1) ).c_str());
     }
     else
     {
-        cout << "Usage: " << argv[0] << " host port spiDevice [interface]" << endl;
+        cout << "Usage: " << argv[0] << " host port [spiDevice] [interface]" << endl;
         cout << "ie: " << argv[0] << " 127.0.0.1 4200 /dev/spidev0.0 wlan0" << endl;
         exit(-1);
     }
