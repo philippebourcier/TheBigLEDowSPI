@@ -15,7 +15,12 @@
 #include <fcntl.h>		// Needed for SPI port
 #include <linux/spi/spidev.h>	// Needed for SPI port
 
+#include <iostream>
+#include <fstream>
+#include <experimental/filesystem> 
+
 using namespace std;
+namespace fs = std::experimental::filesystem;
 
 //-----------------------------------------------------------------------------
 // TheBigLEDowSPI.cpp V2.3
@@ -24,26 +29,35 @@ using namespace std;
 #define VERSION "V2.3"
 
 // ID Utilities ---------------------------------------------------------------
-const char* getMacAddress()
+string getMacFromFile(string fname)
 {
-    static char str[13];
-    struct      ifreq s;
-    int         fs = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    string mac  = "";
+    ifstream infile(fname);
+    getline(infile,mac);
+    // remove ":"
+    while(mac.find(":")!=string::npos) mac.replace(mac.find(":"),1,"");
+    return mac;
+}
 
-    strcpy(s.ifr_name, "eth0");
-
-    if (0 == ioctl(fs, SIOCGIFHWADDR, &s))
-    {
-        snprintf(
-            str, sizeof(str),
-            "%02x%02x%02x%02x%02x%02x",
-            s.ifr_addr.sa_data[0], s.ifr_addr.sa_data[1],
-            s.ifr_addr.sa_data[2], s.ifr_addr.sa_data[3],
-            s.ifr_addr.sa_data[4], s.ifr_addr.sa_data[5]
-        );
+string getMacAddress(string if_n="")
+{
+#ifndef HAS_SPI
+    return "1234";
+#endif
+    string path = "/sys/class/net/";
+    string if_l = "";
+    string mac  = "";
+    for (auto & p : fs::directory_iterator(path)) {
+	    if_l = p.path().string().substr(15,2);
+	    if(if_l!="lo") {
+	    	if(if_l==if_n) {
+    	    		return getMacFromFile(p.path().string()+"/address");
+	    	} else if(mac=="") {
+    	    		mac=getMacFromFile(p.path().string()+"/address");
+	    	}
+	    }
     }
-
-    return str;
+    return mac;
 }
 
 // SPI Utilities --------------------------------------------------------------
@@ -216,10 +230,12 @@ void send2spi( int fd, uint32_t freq, uint8_t brightness, char *data, int size, 
 
 #ifdef DEBUG
     cerr << "<send2spi> data size = " << size << ", spi size = " << lgB << ", light = " << (int)light << endl;
+#ifdef HAS_SPI
     cerr << "SPI BUFFER[" << sizeof(buffer)/sizeof(*buffer) << "], 20 first bytes : ";
     for(int k=4; k<24; k++)
         cerr << (int)buffer[k] << ",";
     cerr << endl;
+#endif
 #endif
 
 }
@@ -374,9 +390,10 @@ void tcpClient( int sockFd, int spiFd, uint32_t spiFreq, uint32_t maxSize, uint8
 int main(int argc, char *argv[])
 {
     char		_id[20];
+    string		_ifname		= "";
     string 		_host		= "127.0.0.1";
     int 		_port		= 4200;
-    string 		_spiDevice	= "";
+    string 		_spiDevice	= "/dev/spidev0.0";
 
     char		_header[]	= { 65, 80, 65, 49, 48, 50, 95 };	// "APA102_"
     int			_headerSize	= sizeof(_header) / sizeof(char);
@@ -387,35 +404,28 @@ int main(int argc, char *argv[])
     int 		_delay 		= 6;
     bool		_endFrame	= true;
 
-#ifdef HAS_SPI
-    sprintf( _id, "id_%s_", getMacAddress() );
-#else
-    sprintf( _id, "id_1234_" );
-#endif
-
     // Arguments ------------------------------------------
     if ( argc == 1 )
     {
-	cout << "id : " << _id << "0" << endl;
+	cout << "id : id_" << getMacAddress(_ifname) << "_0" << endl;
         exit(0);
     }
-    else if ( argc == 4 )
+    else if ( argc >= 4 )
     {
-        _host 		= string( 	argv[1] );
-        _port 		= atoi(		argv[2] );
-        _spiDevice 	= string( 	argv[3] );	// /dev/spidev0.0 /dev/spidev1.0
-#ifdef HAS_SPI
-	string idtmp	= string(_id) + _spiDevice.substr(_spiDevice.find_first_of(".")-1,1);
-	strcpy(_id,idtmp.c_str());
-#endif
+        _host 			 = string( argv[1] );
+        _port 			 = atoi(   argv[2] );
+        _spiDevice 		 = string( argv[3] );	// /dev/spidev0.0 /dev/spidev1.0
+    	if ( argc == 5 ) _ifname = string( argv[4] );
+	strcpy(_id,string( "id_" + getMacAddress() + "_" + _spiDevice.substr(_spiDevice.find_first_of(".")-1,1) ).c_str());
     }
     else
     {
-        cout << "Usage: " << argv[0] << " host port spiDevice" << endl;
+        cout << "Usage: " << argv[0] << " host port spiDevice [interface]" << endl;
+        cout << "ie: " << argv[0] << " 127.0.0.1 4200 /dev/spidev0.0 wlan0" << endl;
         exit(-1);
     }
 
-    cerr << "TCP to APA1O2 Client " << VERSION << ", id : " << _id << ", on : " << _spiDevice << ", waiting for " << _host << ":" << _port << endl;
+    cerr << "TheBigLEDowSPI (TCP to APA1O2 Client) " << VERSION << ", id : " << _id << ", on : " << _spiDevice << ", waiting for " << _host << ":" << _port << endl;
 
     // Main loop ------------------------------------------
     while(1)
