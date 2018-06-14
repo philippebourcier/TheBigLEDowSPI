@@ -216,6 +216,10 @@ void send2spi( int fd, uint32_t freq, uint8_t brightness, char *data, int size, 
 
 #ifdef DEBUG
     cerr << "<send2spi> data size = " << size << ", spi size = " << lgB << ", light = " << (int)light << endl;
+    cerr << "SPI BUFFER[" << sizeof(buffer)/sizeof(*buffer) << "], 20 first bytes : ";
+    for(int k=4; k<24; k++)
+        cerr << (int)buffer[k] << ",";
+    cerr << endl;
 #endif
 
 }
@@ -434,6 +438,9 @@ int main(int argc, char *argv[])
 
                     if(spiFreq != 0 || receiveSize != 0)
                     {
+#ifdef DEBUG
+                        cerr << "Data transfer parameters received : frequency = " << spiFreq << ", size = " << receiveSize << ", brightness = " << brightness << endl;
+#endif
 #ifdef HAS_SPI
                         spiFd = spiOpen( _spiDevice, spiFreq );
 #endif
