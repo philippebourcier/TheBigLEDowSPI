@@ -136,7 +136,7 @@ int tcpConnect(string address, int port)
 
     if (sock == -1)
     {
-        cerr << "tcpConnect> ERROR : Could not create socket" << endl;
+        cerr << "tcpConnect> ERROR : Could not create socket (" << strerror(errno) << ")" << endl;
         return -1;
     }
     else
@@ -403,6 +403,8 @@ int main(int argc, char *argv[])
     // Parameters -----------------------------------------
     int 		_delay 		= 6;
     bool		_endFrame	= true;
+    int			_countErr	= 0;
+    int			_maxCountErr	= 100;
 
     // Arguments ------------------------------------------
     if ( argc == 1 )
@@ -474,7 +476,13 @@ int main(int argc, char *argv[])
             cerr << "<Main> TCP Connect failed." << endl;
         }
 
+	// after 10 minutes failing to create the socket, we quit
+	// the process launcher script will relaunch it
+	_countErr++;
+	if(_countErr > _maxCountErr) exit( -1 );
+
         sleep( _delay );
+
     }
 
     exit( -1 );
